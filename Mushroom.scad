@@ -11,7 +11,7 @@ door_height = 25;
 
 window_radius = 5;
 
-// === 三角棱锥模块 ===
+
 module triangle_prism(size=6, depth=8, up=true) {
     points = up ? [[0,0], [size,0], [size/2, size*sqrt(3)/2]]
                 : [[0,size*sqrt(3)/2], [size,size*sqrt(3)/2], [size/2, 0]];
@@ -19,13 +19,13 @@ module triangle_prism(size=6, depth=8, up=true) {
         polygon(points);
 }
 
-// === 外墙 + 所有镂空 ===
+
 module wall_with_cutouts() {
     difference() {
-        // 外墙体
+
         cylinder(h = house_height, r = house_radius, $fn = 100);
 
-        // 多排三角镂空
+  
         triangle_size = 8;
         triangle_rows = 3;
         triangles_per_row = 18;
@@ -44,17 +44,16 @@ module wall_with_cutouts() {
             }
         }
 
-        // 用圆柱体挖拱门
         translate([0, -house_radius + 5, 2])
             rotate([90, 0, 0])
                 cylinder(h = house_radius, r = door_width / 2, $fn = 100);
     }
 }
 
-// === 屋顶模块（椭球 + 放射长条镂空）===
+
 module mushroom_roof_with_rays() {
     difference() {
-        // 屋顶主体（半椭球）
+
         scale([1, 1, roof_height / roof_radius])
             intersection() {
                 sphere(r = roof_radius, $fn = 100);
@@ -62,7 +61,6 @@ module mushroom_roof_with_rays() {
                     cube([2 * roof_radius, 2 * roof_radius, roof_radius], center = true);
             }
 
-        // 镂空条：贴着壳表面聚焦顶部
         for (angle = [0 : 30 : 330]) {
             for (step = [0 : 1 : 8]) {
                 t = step / 8;
@@ -87,41 +85,40 @@ module mushroom_roof_with_rays() {
     }
 }
 
-// === 圆环状物体模块 ===
-// 参数：outer_r 外半径，inner_r 内半径，height 高度
+
 module cylindrical_ring(outer_r = 10, inner_r = 8, height = 5) {
     difference() {
         cylinder(r = outer_r, h = height, $fn = 100);
-        translate([0, 0, -0.1])  // 让内柱略微长一点，避免 z-fighting
+        translate([0, 0, -0.1]) 
             cylinder(r = inner_r, h = height + 0.2, $fn = 100);
     }
 }
 
-// === 主体结构合并 ===
+
 difference() {
     union() {
         wall_with_cutouts();
 
-        // 添加门环结构（圆环与主体相交部分）
+
         intersection() {
             translate([0, -26, 2])
                 rotate([90, 0, 0])
                     cylindrical_ring(outer_r = 12, inner_r = 9, height = 4);
-            // 用墙体裁剪掉外部部分
+
             cylinder(h = house_height, r = house_radius, $fn = 100);
         }
     }
 
-    // 内部挖空
+
     translate([0, 0, wall_thickness])
         cylinder(h = house_height, r = house_radius - wall_thickness, $fn = 100);
 
-    // 切掉圆环底部（保留上半圆）
+
     translate([-50, -50, -10])
         cube([100, 100, 10]);
 }
 
-// === 放置屋顶 ===
+
 translate([0, 0, house_height])
     mushroom_roof_with_rays();
 
